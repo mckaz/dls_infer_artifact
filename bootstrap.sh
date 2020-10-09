@@ -27,6 +27,9 @@ echo 'HERE 3'
 source /home/vagrant/.rvm/scripts/rvm
 echo 'HERE 4'
 
+export DEBIAN_FRONTEND=noninteractive
+
+
 # Install Ruby
 rvm install 2.6.3
 rvm use ruby-2.6.3
@@ -87,4 +90,45 @@ cd tzinfo-infer
 bundle install
 gem build tzinfo.gemspec
 gem install tzinfo-2.0.0.gem
+cd ~
+
+echo "Installing Journey..."
+git clone https://github.com/mckaz/journey-infer.git
+cd journey-infer
+cp /vagrant/journey_database.yml config/database.yml
+bundle update
+bundle exec rake db:migrate
+cd ~
+
+echo "Installing Discourse..."
+git clone https://github.com/mckaz/discourse-infer.git
+cd discourse-infer
+rm Gemfile.lock
+bundle install
+sudo apt-get -y install nodejs
+createdb discourse_development
+bundle exec rake db:create
+bundle exec rake db:migrate
+cd ~
+
+echo "Installing Talks..."
+git clone https://github.com/mckaz/talks-infer.git
+cd talks-infer
+bundle install
+bundle exec rake db:create
+bundle exec rake db:schema:load
+
+echo "Installing code.org..."
+git clone --depth 1 --no-single-branch https://github.com/mckaz/code-dot-org
+cd code-dot-org
+git checkout infer
+rm Gemfile.lock
+bundle install
+cd pegasus
+rake pegasus:setup_db
+RAILS_ENV=test rake pegasus:setup_db
+cd ../dashboard
+bundle exec rails db:environment:set RAILS_ENV=development
+bundle exec rake db:create
+bundle exec rake db:schema:load
 cd ~
